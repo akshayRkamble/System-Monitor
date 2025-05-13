@@ -61,14 +61,16 @@ def create_cpu_chart():
         y=st.session_state.cpu_history,
         mode='lines',
         name='CPU Usage',
-        line=dict(color='#00ff00')
+        line=dict(color='#1f77b4')
     ))
     fig.update_layout(
         title='CPU Usage Over Time',
         yaxis_title='Usage (%)',
         yaxis_range=[0, 100],
         height=300,
-        template='plotly_dark'
+        template='plotly_white',
+        paper_bgcolor='rgba(0,0,0,0)',
+        plot_bgcolor='rgba(0,0,0,0)'
     )
     return fig
 
@@ -79,14 +81,16 @@ def create_memory_chart():
         y=st.session_state.memory_history,
         mode='lines',
         name='Memory Usage',
-        line=dict(color='#ff0000')
+        line=dict(color='#ff7f0e')
     ))
     fig.update_layout(
         title='Memory Usage Over Time',
         yaxis_title='Usage (%)',
         yaxis_range=[0, 100],
         height=300,
-        template='plotly_dark'
+        template='plotly_white',
+        paper_bgcolor='rgba(0,0,0,0)',
+        plot_bgcolor='rgba(0,0,0,0)'
     )
     return fig
 
@@ -101,19 +105,21 @@ def create_network_chart():
         y=df['bytes_sent'],
         mode='lines',
         name='Bytes Sent',
-        line=dict(color='#0000ff')
+        line=dict(color='#2ca02c')
     ))
     fig.add_trace(go.Scatter(
         y=df['bytes_recv'],
         mode='lines',
         name='Bytes Received',
-        line=dict(color='#ff00ff')
+        line=dict(color='#d62728')
     ))
     fig.update_layout(
         title='Network Usage Over Time',
         yaxis_title='Bytes',
         height=300,
-        template='plotly_dark'
+        template='plotly_white',
+        paper_bgcolor='rgba(0,0,0,0)',
+        plot_bgcolor='rgba(0,0,0,0)'
     )
     return fig
 
@@ -125,17 +131,37 @@ def main():
         initial_sidebar_state="expanded"
     )
 
-    # Custom CSS
+    # Custom CSS for light theme
     st.markdown("""
         <style>
         .stApp {
-            background-color: #0e1117;
-            color: #ffffff;
+            background-color: #ffffff;
+            color: #262730;
         }
         .stMetric {
-            background-color: #1e2130;
+            background-color: #f0f2f6;
+            padding: 15px;
+            border-radius: 10px;
+            box-shadow: 0 2px 4px rgba(0,0,0,0.1);
+        }
+        .stMetric:hover {
+            box-shadow: 0 4px 8px rgba(0,0,0,0.2);
+            transition: all 0.3s ease;
+        }
+        .stHeader {
+            color: #262730;
+            font-weight: bold;
+        }
+        .stDataFrame {
+            background-color: #ffffff;
+            border-radius: 10px;
+            box-shadow: 0 2px 4px rgba(0,0,0,0.1);
+        }
+        .stPlotlyChart {
+            background-color: #ffffff;
+            border-radius: 10px;
             padding: 10px;
-            border-radius: 5px;
+            box-shadow: 0 2px 4px rgba(0,0,0,0.1);
         }
         </style>
     """, unsafe_allow_html=True)
