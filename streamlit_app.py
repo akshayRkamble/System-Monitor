@@ -10,6 +10,7 @@ import threading
 import queue
 import os
 import sys
+import random
 
 # Import functions from system_monitor.py
 from system_monitor import (
@@ -30,13 +31,32 @@ def is_cloud_environment():
     """Check if we're running in Streamlit cloud"""
     return 'STREAMLIT_SHARING' in os.environ or 'STREAMLIT_CLOUD' in os.environ
 
+# For demo mode, we'll simulate Windows system information
+DEMO_SYSTEM_INFO = {
+    "System": "Windows",
+    "Node Name": "DESKTOP-WIN10PRO",
+    "Release": "10",
+    "Version": "10.0.19045",
+    "Machine": "AMD64",
+    "Processor": "Intel64 Family 6 Model 142 Stepping 12, GenuineIntel"
+}
+
+DEMO_CPU_INFO = {
+    "Physical cores": "4",
+    "Total cores": "8",
+    "Max Frequency": "3.60Mhz",
+    "Current Frequency": "2.80Mhz",
+    "CPU Usage": "25%"
+}
+
 def safe_cpu_percent():
     """Get CPU usage safely"""
     try:
         return psutil.cpu_percent(interval=0.1)
     except Exception:
         # Return random data for demo purposes in cloud
-        return max(min(st.session_state.cpu_history[-1] + (5 - 10 * (0.5)), 100), 0) if st.session_state.cpu_history else 50
+        last = 25 if not st.session_state.cpu_history else st.session_state.cpu_history[-1]
+        return max(min(last + random.uniform(-5, 5), 100), 0)
 
 def safe_memory_info():
     """Get memory info safely"""
@@ -46,8 +66,9 @@ def safe_memory_info():
         # Return stable data for demo purposes
         class DummyMemory:
             def __init__(self):
-                self.percent = max(min(st.session_state.memory_history[-1] + (3 - 6 * (0.5)), 100), 0) if st.session_state.memory_history else 65
-                self.total = 8 * 1024 * 1024 * 1024  # 8GB
+                last = 65 if not st.session_state.memory_history else st.session_state.memory_history[-1]
+                self.percent = max(min(last + random.uniform(-3, 3), 100), 0)
+                self.total = 16 * 1024 * 1024 * 1024  # 16GB - more typical for Windows
                 self.available = self.total * (1 - self.percent/100)
                 self.used = self.total - self.available
         return DummyMemory()
@@ -63,11 +84,11 @@ def safe_network_info():
                 self.last_sent = st.session_state.get('last_bytes_sent', 1000000)
                 self.last_recv = st.session_state.get('last_bytes_recv', 5000000)
                 
-                # Increment slightly each time
-                self.bytes_sent = self.last_sent + 10000
-                self.bytes_recv = self.last_recv + 20000
-                self.packets_sent = 1000
-                self.packets_recv = 2000
+                # Increment slightly each time with some randomness
+                self.bytes_sent = self.last_sent + random.randint(5000, 15000)
+                self.bytes_recv = self.last_recv + random.randint(10000, 30000)
+                self.packets_sent = random.randint(900, 1100)
+                self.packets_recv = random.randint(1800, 2200)
                 
                 # Save for next time
                 st.session_state['last_bytes_sent'] = self.bytes_sent
@@ -176,29 +197,22 @@ def create_network_chart():
 def safe_get_system_info():
     """Get system info safely"""
     try:
+        # First try to get real system info
         return get_system_info()
     except Exception:
-        return {
-            "System": platform.system() or "Linux",
-            "Node Name": platform.node() or "streamlit-cloud",
-            "Release": platform.release() or "N/A",
-            "Version": platform.version() or "N/A",
-            "Machine": platform.machine() or "N/A",
-            "Processor": platform.processor() or "N/A"
-        }
+        # On failure, return Windows-like demo data
+        return DEMO_SYSTEM_INFO
 
 def safe_get_cpu_info():
     """Get CPU info safely"""
     try:
+        # First try to get real CPU info
         return get_cpu_info()
     except Exception:
-        return {
-            "Physical cores": "N/A",
-            "Total cores": "N/A",
-            "Max Frequency": "N/A",
-            "Current Frequency": "N/A",
-            "CPU Usage": f"{safe_cpu_percent()}%"
-        }
+        # On failure, get Windows-like CPU info with current CPU usage
+        info = DEMO_CPU_INFO.copy()
+        info["CPU Usage"] = f"{safe_cpu_percent():.1f}%"
+        return info
 
 def safe_get_memory_info():
     """Get memory info safely"""
@@ -210,7 +224,7 @@ def safe_get_memory_info():
             "Total": get_size(memory.total),
             "Available": get_size(memory.available),
             "Used": get_size(memory.used),
-            "Percentage": f"{memory.percent}%"
+            "Percentage": f"{memory.percent:.1f}%"
         }
 
 def safe_get_disk_info():
@@ -218,16 +232,27 @@ def safe_get_disk_info():
     try:
         return get_disk_info()
     except Exception:
-        # Return dummy data
-        return [{
-            "Device": "/dev/sda",
-            "Mountpoint": "/",
-            "File system type": "ext4",
-            "Total Size": "50.00GB",
-            "Used": "25.00GB",
-            "Free": "25.00GB",
-            "Percentage": "50.0%"
-        }]
+        # Return Windows-like dummy disk data
+        return [
+            {
+                "Device": "C:\\",
+                "Mountpoint": "C:\\",
+                "File system type": "NTFS",
+                "Total Size": "237.86GB",
+                "Used": "67.23GB",
+                "Free": "170.63GB",
+                "Percentage": "28.3%"
+            },
+            {
+                "Device": "D:\\",
+                "Mountpoint": "D:\\",
+                "File system type": "NTFS",
+                "Total Size": "321.75GB",
+                "Used": "3.16GB",
+                "Free": "318.59GB",
+                "Percentage": "1.0%"
+            }
+        ]
 
 def safe_get_network_info():
     """Get network info safely"""
@@ -247,11 +272,13 @@ def safe_get_processes():
     try:
         return get_processes()
     except Exception:
-        # Return dummy data
+        # Return Windows-like dummy processes
         return [
-            {"pid": 1, "name": "systemd", "username": "root", "memory_percent": 0.5, "cpu_percent": 0.1},
-            {"pid": 2, "name": "kthreadd", "username": "root", "memory_percent": 0.1, "cpu_percent": 0.0},
-            {"pid": 3, "name": "streamlit", "username": "streamlit", "memory_percent": 5.0, "cpu_percent": 3.0}
+            {"pid": 4, "name": "System", "username": "SYSTEM", "memory_percent": 0.1, "cpu_percent": 0.1},
+            {"pid": 504, "name": "svchost.exe", "username": "SYSTEM", "memory_percent": 1.5, "cpu_percent": 0.5},
+            {"pid": 812, "name": "explorer.exe", "username": "USER", "memory_percent": 3.0, "cpu_percent": 1.0},
+            {"pid": 1012, "name": "chrome.exe", "username": "USER", "memory_percent": 5.0, "cpu_percent": 4.0},
+            {"pid": 1230, "name": "StreamlitApp.exe", "username": "USER", "memory_percent": 2.5, "cpu_percent": 3.0}
         ]
 
 def main():
@@ -302,7 +329,7 @@ def main():
     # Check if we're in cloud environment
     cloud_mode = is_cloud_environment()
     if cloud_mode:
-        st.info("⚠️ Running in cloud environment - some system metrics are simulated for demonstration purposes.")
+        st.info("⚠️ Running in demo mode - Windows system metrics are simulated for demonstration purposes.")
 
     # Start background thread for metrics
     if 'thread_started' not in st.session_state:
